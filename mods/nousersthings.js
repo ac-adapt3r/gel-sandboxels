@@ -1463,8 +1463,10 @@ elements.invisiblesupport = {
 		var y = pixel.y
 		if (currentElement == "invisiblesupport"){
 			pixel.color = "rgb(15, 15, 15)";
+            pixel.alpha = 1;
 		} else {
-			pixel.color = "rgba(0, 0, 0, -1)";
+			pixel.color = "rgba(0, 0, 0)";
+            pixel.alpha = 0;
 		}
 		if ((isEmpty(x-1, y) || isEmpty(x+1,y)) && isEmpty(x,y+1)){
 			deletePixel(pixel.x, pixel.y);
@@ -1478,8 +1480,10 @@ elements.invisiblewall = {
 	tick: function(pixel){
 		if (currentElement == "invisiblewall"){
 			pixel.color = "rgb(15, 15, 15)";
+            pixel.alpha = 1;
 		} else {
-			pixel.color = "rgba(0, 0, 0, -1)";
+			pixel.color = "rgba(0, 0, 0)";
+            pixel.alpha = 0;
 		}
 	},
 	category: "solids",
@@ -1861,14 +1865,13 @@ elements.selective_void = {
     state: "solid",
     movable: "false",
     onSelect: async function() {
-        var selvoidans = await _nousersthingsprompt("Please input the desired element of this void. It will not work if you do multiple void types while paused.",(selvoid||undefined));
+        var selvoidans = await _nousersthingsprompt("Please input the desired element of this void.",(selvoid||undefined));
         if (!selvoidans) { return }
 		selvoid = mostSimilarElement(selvoidans);
+        currentElementProp = {changeElem:selvoid}
     },
     tick: function(pixel){
-        if(!pixel.changeElem){
-            pixel.changeElem = selvoid;
-        }
+        if(typeof pixel.changeElem == "undefined"){{changePixel(pixel, "flash"); logMessage("A void without valid properties was attempted to be placed."); return;}}
 		for (var i = 0; i < squareCoords.length; i++) {
             var coord = squareCoords[i];
             var x = pixel.x+coord[0];
@@ -2034,15 +2037,10 @@ elements.ray_emitter = {
 		rayElement = mostSimilarElement(rayans);
         var rayans2 = await _nousersthingsprompt("Should the ray be stopped by walls? Write true or false.",(rayStoppedByWalls||false));
         if (rayans2 == "false"){rayStoppedByWalls = false} else {rayStoppedByWalls = true}
-    },
-    hoverStat: function(pixel){
-        return (pixel.rayElement|| "unset").toUpperCase()  + ", " + (pixel.rayStoppedByWalls || "unset").toString().toUpperCase()
+        currentElementProp = {rayElement:rayElement,rayStoppedByWalls:rayStoppedByWalls}
     },
     tick: function(pixel){
-        if (pixelTicks == pixel.start){
-            pixel.rayElement = rayElement
-            pixel.rayStoppedByWalls = rayStoppedByWalls
-        }
+        if (typeof pixel.rayElement == "undefined" || typeof pixel.rayStoppedByWalls == "undefined"){{changePixel(pixel, "flash"); logMessage("An emitter without valid properties was attempted to be placed."); return;}}
         for (var i = 0; i < squareCoords.length; i++) {
             var coord = squareCoords[i];
             var x = pixel.x+coord[0];
@@ -2094,7 +2092,9 @@ elements.ray_emitter = {
 elements.indestructible_battery = {
     color: elements.battery.color,
     behavior: elements.battery.behavior,
-    category: elements.battery.category
+    category: elements.battery.category,
+    hardness: 1,
+    movable: false
 }
 elements.ray = {
     color: "#ffffff",
@@ -2181,21 +2181,22 @@ elements.specific_ray_emitter = {
         var rayans8 = await _nousersthingsprompt("Would you like rainbow mode to be enabled? Type yes or no.", (rainbowMode||"no"));
         if (rayans8 == "yes"){rainbowMode = true} else {rainbowMode = false}
         }
+        currentElementProp = {
+            rayElement : rayElement,
+            rayStoppedByWalls : rayStoppedByWalls,
+            specificRayStart : specificRayStart,
+            specificRayEnd : specificRayEnd,
+            specificRayAngle : specificRayAngle,
+            stopAtElement : stopAtElement,
+            life : rayLife,
+            rainbowMode : rainbowMode
+        }
     },
     hoverStat: function(pixel){
         return (pixel.rayElement || "unset").toUpperCase() + ", " + (pixel.rayStoppedByWalls || "unset").toString().toUpperCase() + ", " + (pixel.specificRayStart || "unset") + ", " + (pixel.specificRayEnd || "unset") + ", " + (pixel.specificRayAngle || "unset")
     },
     tick: function(pixel){
-        if (pixelTicks == pixel.start){
-            pixel.rayElement = rayElement
-            pixel.rayStoppedByWalls = rayStoppedByWalls
-            pixel.specificRayStart = specificRayStart
-            pixel.specificRayEnd = specificRayEnd
-            pixel.specificRayAngle = specificRayAngle
-            pixel.stopAtElement = stopAtElement
-            pixel.life = rayLife
-            pixel.rainbowMode = rainbowMode
-        }
+        if (typeof pixel.rayElement == "undefined"){{changePixel(pixel, "flash"); logMessage("An emitter without valid properties was attempted to be placed."); return;}}
         if (pixel.rainbowMode){
         pixel.specificRayAngle ++
         pixel.rgb = pixel.color.match(/\d+/g);
@@ -2403,11 +2404,10 @@ elements.piston_ray_emitter = {
         ans1 = ans1.toLowerCase()
         if (ans1 == "pull"){pullOrPush = 1}
         else if (ans1 == "push"){pullOrPush = 2}
+        currentElementProp = {pullOrPush: pullOrPush}
     },
     tick: function(pixel){
-        if (pixelTicks == pixel.start){
-            pixel.pullOrPush = pullOrPush
-        }
+        if (typeof pixel.pullOrPush == "undefined"){{changePixel(pixel, "flash"); logMessage("A piston without valid properties was attempted to be placed."); return;}}
         if (!pixel.cooldown){pixel.cooldown = 0}
         if (pixel.cooldown < 1){
         for (var i = 0; i < adjacentCoords.length; i++) {
@@ -2510,17 +2510,18 @@ elements.specific_piston_ray_emitter = {
             var ans7 = parseInt(await _nousersthingsprompt("How many ticks should it wait between repeats?", "1"))
             pistonRepeatCooldown = ans7
         }
+        currentElementProp = {
+            pullOrPush : pullOrPush,
+            pistonStart : pistonStart,
+            pistonEnd : pistonEnd,
+            pistonDistance : pistonDistance,
+            pistonCooldown : pistonCooldown,
+            pistonRepeat : pistonRepeat,
+            pistonRepeatCooldown : pistonRepeatCooldown
+        }
     },
     tick: function(pixel){
-        if (pixelTicks == pixel.start){
-            pixel.pullOrPush = pullOrPush
-            pixel.pistonStart = pistonStart
-            pixel.pistonEnd = pistonEnd
-            pixel.pistonDistance = pistonDistance
-            pixel.pistonCooldown = pistonCooldown
-            pixel.pistonRepeat = pistonRepeat
-            pixel.pistonRepeatCooldown = pistonRepeatCooldown
-        }
+        if (typeof pistonStart == "undefined"){{changePixel(pixel, "flash"); logMessage("A piston without valid properties was attempted to be placed."); return;}}
         if (!pixel.pistonRepeat){
             pixel.pistonRepeat = pistonRepeat
             pixel.pistonRepeatCooldown = pistonRepeatCooldown
@@ -2643,11 +2644,9 @@ elements.super_heat_conductor = {
                 var y = pixel.y+adjacentCoords[i][1];
                 if (!isEmpty(x,y,true)) {
                     var newPixel = pixelMap[x][y];
-                    // Skip if both temperatures are the same
-                    if (pixel.temp == newPixel.temp || elements[newPixel.element].insulate == true) {
+                    if (elements[newPixel.element].insulate == true) {
                         continue;
                     }
-                    // Set both pixel temperatures to their average
                     var avg = (pixel.temp + newPixel.temp)/2;
                     pixel.temp = avg;
                     newPixel.temp = avg;
@@ -2841,12 +2840,11 @@ elements.copycat_filler = {
     onSelect: async function(){
         let ans1 = await _nousersthingsprompt("Enter the element you want to use for the copycat filler", copycatfillerElem||"sand")
         copycatfillerElem = mostSimilarElement(ans1)
+        currentElementProp = {copycatElement:copycatfillerElem}
     },
     tick: function(pixel){
         let fillerNeighbors = {}
-        if (!pixel.copycatElement){
-            pixel.copycatElement = copycatfillerElem
-        }
+        if (typeof pixel.copycatElement == "undefined"){{changePixel(pixel, "flash"); logMessage("A filler without valid properties was attempted to be placed."); return;}}
         if (!pixel.rSeed){
             pixel.rSeed = [Math.random(), Math.random(), Math.random(), Math.random()]
         }
@@ -3018,11 +3016,10 @@ elements.pipe_transmitter = {
     onSelect: async () => {
         let newChannel = await _nousersthingsprompt("Enter the channel of this pipe transmitter. It will not work if you do multiple while paused.", pipe_transmitter_channelVar);
         pipe_transmitter_channelVar = newChannel;
+        currentElementProp = {channel:pipe_transmitter_channelVar}
     },
     tick: (pixel) => {
-        if (!pixel.channel){
-            pixel.channel = pipe_transmitter_channelVar;
-        }
+        if (typeof pixel.channel == "undefined"){{changePixel(pixel, "flash"); logMessage("A transmitter without valid properties was attempted to be placed."); return;}}
         if (pixel.channel && pixel.con){
             let valid = currentPixels.filter(pixel2 => 
                 pixel2.element == "pipe_receiver" && pixel2.channel === pixel.channel && !(pixel2.con)
@@ -3049,11 +3046,10 @@ elements.pipe_receiver = {
     onSelect: async () => {
         let newChannel = await _nousersthingsprompt("Enter the channel of this pipe receiver. It will not work if you do multiple while paused.", pipe_receiver_channelVar);
         pipe_receiver_channelVar = newChannel;
+        currentElementProp = {channel:pipe_receiver_channelVar}
     },
     tick: (pixel) => {
-        if (!pixel.channel){
-            pixel.channel = pipe_receiver_channelVar;
-        }
+        if (typeof pixel.channel == "undefined"){{changePixel(pixel, "flash"); logMessage("A receiver without valid properties was attempted to be placed."); return;}}
         if (pixel.channel && pixel.con){
             // just scan neighbors for elements on the pipe list; transfer con to them. if its a type of channel pipe, also check if channel matches
             for (i = 0; i < squareCoords.length; i++){
@@ -3148,6 +3144,7 @@ elements.sign = {
     onSelect: async function(){
         let signi = await _nousersthingsprompt("What text should the sign display?", signInput||"Hello World!")
         signInput = signi;
+        currentElementProp = {sign:signInput}
     },
     renderer: function(pixel, ctx){
         if (!pixel.sign){pixel.sign = signInput}
