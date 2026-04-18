@@ -10,13 +10,13 @@ behaviors.GEL = function(pixel) {
             sticking = true
             if (Math.random() < 0.2) {
                 if (Math.random() > 0.5) {
-                    if (!isEmpty(pixel.x+1, pixel.y-1)) {
+                    if (!isEmpty(pixel.x+1, pixel.y-1) & getPixel(pixel.x+1, pixel.y-1) != null ) {
                         if (!getPixel(pixel.x+1, pixel.y-1).sticky) {
                             tryMove(pixel, pixel.x+1, pixel.y)
                         }
                     }
                 } else {
-                    if (!isEmpty(pixel.x-1, pixel.y-1)) {
+                    if (!isEmpty(pixel.x-1, pixel.y-1) & getPixel(pixel.x-1, pixel.y-1) != null ) {
                         if (!getPixel(pixel.x-1, pixel.y-1).sticky) {
                             tryMove(pixel, pixel.x-1, pixel.y)
                         }
